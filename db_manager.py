@@ -38,20 +38,7 @@ class TodoDB:
         db_password = os.getenv('DB_PASSWORD')
         db_name = os.getenv('DB_NAME')
         
-        # Create SQLAlchemy engine for initial connection
-        initial_engine = create_engine(
-            f'postgresql://{db_username}:{db_password}@{db_host}:{db_port}/postgres'
-        )
-        
-        # Create database if not exists
-        with initial_engine.connect() as conn:
-            conn.execution_options(isolation_level='AUTOCOMMIT')
-            try:
-                conn.execute(f'CREATE DATABASE "{db_name}"')
-            except Exception as e:
-                print(f"Database {db_name} might already exist: {e}")
-        
-        # Create SQLAlchemy engine for the specific database
+        # Create SQLAlchemy engine for the database
         self.engine = create_engine(
             f'postgresql://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}'
         )
