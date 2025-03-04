@@ -1,0 +1,390 @@
+Todo API 문서
+버전: 1.0.0
+설명: Todo 및 Note 관리를 위한 API
+
+1. 노트 API
+1.1. 노트 목록 조회
+기본 정보
+Method: GET
+URL: /api/notes/
+설명: 모든 노트 항목을 조회합니다. 내용으로 검색할 수 있습니다.
+요청 (Query Parameters)
+Name	Type	Description	Default	Required
+ordering	String	정렬 기준 (created_at)	-	X
+page	Integer	페이지 번호	-	X
+search	String	노트 내용 검색	-	X
+응답 (JSON)
+Name	Type	Description
+count	Integer	전체 노트 개수
+next	String	다음 페이지 URL (nullable)
+previous	String	이전 페이지 URL (nullable)
+results	Array	각 항목은 노트 객체
+  - id	Integer	노트의 고유 식별자
+  - content	String	노트 내용
+  - created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "count": 100,
+  "next": "http://api.example.com/api/notes/?page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "content": "예시 노트 내용",
+      "created_at": "2025-01-01T12:00:00Z"
+    }
+  ]
+}
+1.2. 노트 생성
+기본 정보
+Method: POST
+URL: /api/notes/
+설명: 새로운 노트 항목을 생성합니다.
+요청 (Request Body)
+Name	Type	Description	Required
+content	String	노트 내용	O
+Note
+
+Body는 JSON, Form-URL-Encoded, Multipart/Form-Data 모두 지원합니다.
+content 필드는 마크다운 형식의 문자열도 허용합니다.
+응답 (JSON)
+Name	Type	Description
+id	Integer	노트의 고유 식별자
+content	String	노트 내용
+created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "id": 101,
+  "content": "새로 작성된 노트 내용",
+  "created_at": "2025-01-02T09:00:00Z"
+}
+1.3. 노트 상세 조회
+기본 정보
+Method: GET
+URL: /api/notes/{id}/
+설명: 특정 노트 항목의 상세 정보를 조회합니다.
+요청 (Path Parameter)
+Name	Type	Description	Required
+id	Integer	A unique integer value identifying this note.	O
+응답 (JSON)
+Name	Type	Description
+id	Integer	노트의 고유 식별자
+content	String	노트 내용
+created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "id": 10,
+  "content": "특정 노트의 상세 내용",
+  "created_at": "2025-01-03T15:00:00Z"
+}
+1.4. 노트 수정
+기본 정보
+Method: PUT
+URL: /api/notes/{id}/
+설명: 특정 노트 항목을 완전히 수정합니다.
+요청 (Path Parameter)
+Name	Type	Description	Required
+id	Integer	A unique integer value identifying this note.	O
+요청 (Request Body)
+Name	Type	Description	Required
+content	String	노트 내용	O
+Note
+
+Body는 JSON, Form-URL-Encoded, Multipart/Form-Data 모두 지원합니다.
+이 메서드는 전체 필드를 모두 갱신(교체)합니다.
+응답 (JSON)
+Name	Type	Description
+id	Integer	노트의 고유 식별자
+content	String	노트 내용
+created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "id": 10,
+  "content": "수정된 노트 내용",
+  "created_at": "2025-01-03T15:00:00Z"
+}
+1.5. 노트 부분 수정
+기본 정보
+Method: PATCH
+URL: /api/notes/{id}/
+설명: 특정 노트 항목을 부분적으로 수정합니다.
+요청 (Path Parameter)
+Name	Type	Description	Required
+id	Integer	A unique integer value identifying this note.	O
+요청 (Request Body)
+Name	Type	Description	Required
+content	String	노트 내용	X (선택)
+Note
+
+Body는 JSON, Form-URL-Encoded, Multipart/Form-Data 모두 지원합니다.
+이 메서드는 지정된 필드만 갱신합니다.
+응답 (JSON)
+Name	Type	Description
+id	Integer	노트의 고유 식별자
+content	String	노트 내용
+created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "id": 10,
+  "content": "부분적으로 수정된 노트 내용",
+  "created_at": "2025-01-03T15:00:00Z"
+}
+1.6. 노트 삭제
+기본 정보
+Method: DELETE
+URL: /api/notes/{id}/
+설명: 특정 노트 항목을 삭제합니다.
+요청 (Path Parameter)
+Name	Type	Description	Required
+id	Integer	A unique integer value identifying this note.	O
+응답
+Status Code: 204 (No Content)
+Response Body: 없음
+2. 할 일(Todo) API
+2.1. 할 일 목록 조회
+기본 정보
+Method: GET
+URL: /api/todos/
+설명: 모든 할 일 항목을 조회합니다. 상태, 우선순위로 필터링하거나 내용으로 검색할 수 있습니다.
+요청 (Query Parameters)
+Name	Type	Description	Default	Required
+ordering	String	정렬 기준 (due_date, priority, created_at)	-	X
+page	Integer	페이지 번호	-	X
+priority	String	우선순위 필터링 (High/Medium/Low)	-	X
+search	String	할 일 내용 검색	-	X
+status	String	상태 필터링 (Pending/Completed)	-	X
+응답 (JSON)
+Name	Type	Description
+count	Integer	전체 할 일 개수
+next	String	다음 페이지 URL (nullable)
+previous	String	이전 페이지 URL (nullable)
+results	Array	각 항목은 할 일(Todo) 객체
+  - id	Integer	할 일 항목의 고유 식별자
+  - task	String	할 일 내용
+  - due_date	String	마감일 (YYYY-MM-DD)
+  - priority	String	우선순위 (High, Medium, Low)
+  - status	String	상태 (Pending, Completed)
+  - created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "count": 50,
+  "next": "http://api.example.com/api/todos/?page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "task": "예시 할 일 1",
+      "due_date": "2025-01-05",
+      "priority": "High",
+      "status": "Pending",
+      "created_at": "2025-01-01T09:00:00Z"
+    }
+  ]
+}
+2.2. 할 일 생성
+기본 정보
+Method: POST
+URL: /api/todos/
+설명: 새로운 할 일 항목을 생성합니다.
+요청 (Request Body)
+Name	Type	Description	Required
+task	String	할 일 내용	O
+due_date	String	마감일 (YYYY-MM-DD)	O
+priority	String	우선순위 (High, Medium, Low)	X
+status	String	상태 (Pending, Completed)	X
+Note
+
+Body는 JSON, Form-URL-Encoded, Multipart/Form-Data 모두 지원합니다.
+task와 due_date는 필수 입력입니다.
+응답 (JSON)
+Name	Type	Description
+id	Integer	할 일 항목의 고유 식별자
+task	String	할 일 내용
+due_date	String	마감일 (YYYY-MM-DD)
+priority	String	우선순위 (High, Medium, Low)
+status	String	상태 (Pending, Completed)
+created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "id": 101,
+  "task": "새로운 할 일 추가",
+  "due_date": "2025-01-10",
+  "priority": "Medium",
+  "status": "Pending",
+  "created_at": "2025-01-02T08:30:00Z"
+}
+2.3. 할 일 상세 조회
+기본 정보
+Method: GET
+URL: /api/todos/{id}/
+설명: 특정 할 일 항목의 상세 정보를 조회합니다.
+요청 (Path Parameter)
+Name	Type	Description	Required
+id	Integer	A unique integer value identifying this todo.	O
+응답 (JSON)
+Name	Type	Description
+id	Integer	할 일 항목의 고유 식별자
+task	String	할 일 내용
+due_date	String	마감일 (YYYY-MM-DD)
+priority	String	우선순위 (High, Medium, Low)
+status	String	상태 (Pending, Completed)
+created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "id": 50,
+  "task": "특정 할 일 조회 예시",
+  "due_date": "2025-02-01",
+  "priority": "Low",
+  "status": "Completed",
+  "created_at": "2025-01-05T11:00:00Z"
+}
+2.4. 할 일 수정
+기본 정보
+Method: PUT
+URL: /api/todos/{id}/
+설명: 특정 할 일 항목을 완전히 수정합니다.
+요청 (Path Parameter)
+Name	Type	Description	Required
+id	Integer	A unique integer value identifying this todo.	O
+요청 (Request Body)
+Name	Type	Description	Required
+task	String	할 일 내용	O
+due_date	String	마감일 (YYYY-MM-DD)	O
+priority	String	우선순위 (High, Medium, Low)	X
+status	String	상태 (Pending, Completed)	X
+Note
+
+이 메서드는 전체 필드를 모두 갱신(교체)합니다.
+응답 (JSON)
+Name	Type	Description
+id	Integer	할 일 항목의 고유 식별자
+task	String	할 일 내용
+due_date	String	마감일 (YYYY-MM-DD)
+priority	String	우선순위 (High/Medium/Low)
+status	String	상태 (Pending/Completed)
+created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "id": 50,
+  "task": "수정된 할 일 내용",
+  "due_date": "2025-03-01",
+  "priority": "High",
+  "status": "Pending",
+  "created_at": "2025-01-05T11:00:00Z"
+}
+2.5. 할 일 부분 수정
+기본 정보
+Method: PATCH
+URL: /api/todos/{id}/
+설명: 특정 할 일 항목을 부분적으로 수정합니다.
+요청 (Path Parameter)
+Name	Type	Description	Required
+id	Integer	A unique integer value identifying this todo.	O
+요청 (Request Body)
+Name	Type	Description	Required
+task	String	할 일 내용	X (선택)
+due_date	String	마감일 (YYYY-MM-DD)	X (선택)
+priority	String	우선순위 (High/Medium/Low)	X (선택)
+status	String	상태 (Pending/Completed)	X (선택)
+Note
+
+지정된 필드만 갱신합니다.
+응답 (JSON)
+Name	Type	Description
+id	Integer	할 일 항목의 고유 식별자
+task	String	할 일 내용
+due_date	String	마감일 (YYYY-MM-DD)
+priority	String	우선순위 (High/Medium/Low)
+status	String	상태 (Pending/Completed)
+created_at	String	생성 일시 (date-time)
+응답 예시
+json
+복사
+편집
+{
+  "id": 50,
+  "task": "부분 수정된 할 일 내용",
+  "due_date": "2025-03-10",
+  "priority": "Medium",
+  "status": "Completed",
+  "created_at": "2025-01-05T11:00:00Z"
+}
+2.6. 할 일 삭제
+기본 정보
+Method: DELETE
+URL: /api/todos/{id}/
+설명: 특정 할 일 항목을 삭제합니다.
+요청 (Path Parameter)
+Name	Type	Description	Required
+id	Integer	A unique integer value identifying this todo.	O
+응답
+Status Code: 204 (No Content)
+Response Body: 없음
+3. 인증(Security Schemes)
+Basic Auth
+
+Type: http
+Scheme: basic
+Cookie Auth
+
+Type: apiKey
+In: cookie
+Name: sessionid
+일부 엔드포인트에서는 인증 정보(cookieAuth, basicAuth)가 요구될 수 있습니다.
+
+참고: 스키마(Schemas)
+Note
+id (integer, readOnly)
+content (string)
+created_at (string, format: date-time, readOnly)
+Todo
+id (integer, readOnly)
+task (string)
+due_date (string, format: date)
+priority (string: High, Medium, Low)
+status (string: Pending, Completed)
+created_at (string, format: date-time, readOnly)
+NoteRequest
+content (string, minLength=1)
+TodoRequest
+task (string, minLength=1)
+due_date (string, format: date)
+priority (string: High, Medium, Low) — 선택
+status (string: Pending, Completed) — 선택
+기타 Paginated 스키마
+PaginatedNoteList, PaginatedTodoList는
+count, next, previous, results 등의 페이지네이션 구조를 가집니다.
+위와 같이 정리된 문서는
+
+노트 관련 API(/api/notes/ 및 /api/notes/{id}/)
+할 일(Todo) 관련 API(/api/todos/ 및 /api/todos/{id}/)
+전체를 일관된 문서 형식으로 나타냅니다.
+실제 환경에 따라 요청/응답 예시, 필드 설명, 인증 여부가 달라질 수 있으며,
+일부 필드는 nullable 혹은 readOnly 설정이 있을 수 있으니 참고 바랍니다.
