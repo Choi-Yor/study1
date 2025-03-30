@@ -18,8 +18,14 @@ import TodoForm from './TodoForm';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import todoService, { Todo, TodoInput } from '@/services/todoService';
 
+// 전역 변수로 데이터 저장소 생성
+const todoStore = {
+  todos: [] as Todo[],
+  initialized: false
+};
+
 const TodoList: React.FC = () => {
-  const [todos, setTodos] = useState<Todo[]>([]); // todos 상태 초기값을 빈 배열로 명시적으로 설정
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [filteredTodos, setFilteredTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,10 +40,20 @@ const TodoList: React.FC = () => {
 
   // Fetch todos from API
   const fetchTodos = async () => {
+    // 이미 데이터가 초기화되었고 저장된 데이터가 있으면 API 호출 생략
+    if (todoStore.initialized && todoStore.todos.length > 0) {
+      setTodos(todoStore.todos);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const data = await todoService.getAllTodos();
       setTodos(data);
+      // 전역 저장소에 데이터 저장
+      todoStore.todos = data;
+      todoStore.initialized = true;
       setError(null);
     } catch (err) {
       console.error('Error fetching todos:', err);
@@ -83,7 +99,10 @@ const TodoList: React.FC = () => {
   const handleAddTodo = async (todoData: TodoInput) => {
     try {
       const newTodo = await todoService.createTodo(todoData);
-      setTodos(prev => Array.isArray(prev) ? [...prev, newTodo] : [newTodo]);
+      const updatedTodos = Array.isArray(todos) ? [...todos, newTodo] : [newTodo];
+      setTodos(updatedTodos);
+      // 전역 저장소 업데이트
+      todoStore.todos = updatedTodos;
     } catch (err) {
       console.error('Error adding todo:', err);
       setError('Failed to add todo. Please try again.');
@@ -96,11 +115,13 @@ const TodoList: React.FC = () => {
     
     try {
       const updatedTodo = await todoService.updateTodo(editTodo.id, todoData);
-      setTodos(prev => 
-        Array.isArray(prev) 
-          ? prev.map(todo => todo.id === editTodo.id ? updatedTodo : todo)
-          : [updatedTodo]
-      );
+      const updatedTodos = Array.isArray(todos) 
+        ? todos.map(todo => todo.id === editTodo.id ? updatedTodo : todo)
+        : [updatedTodo];
+      
+      setTodos(updatedTodos);
+      // 전역 저장소 업데이트
+      todoStore.todos = updatedTodos;
     } catch (err) {
       console.error('Error updating todo:', err);
       setError('Failed to update todo. Please try again.');
@@ -111,11 +132,13 @@ const TodoList: React.FC = () => {
   const handleDeleteTodo = async (id: number) => {
     try {
       await todoService.deleteTodo(id);
-      setTodos(prev => 
-        Array.isArray(prev) 
-          ? prev.filter(todo => todo.id !== id)
-          : []
-      );
+      const updatedTodos = Array.isArray(todos) 
+        ? todos.filter(todo => todo.id !== id)
+        : [];
+      
+      setTodos(updatedTodos);
+      // 전역 저장소 업데이트
+      todoStore.todos = updatedTodos;
     } catch (err) {
       console.error('Error deleting todo:', err);
       setError('Failed to delete todo. Please try again.');
@@ -133,11 +156,13 @@ const TodoList: React.FC = () => {
         status: completed ? 'Completed' : 'Pending'
       });
       
-      setTodos(prev => 
-        Array.isArray(prev)
-          ? prev.map(todo => todo.id === id ? updatedTodo : todo)
-          : [updatedTodo]
-      );
+      const updatedTodos = Array.isArray(todos)
+        ? todos.map(todo => todo.id === id ? updatedTodo : todo)
+        : [updatedTodo];
+      
+      setTodos(updatedTodos);
+      // 전역 저장소 업데이트
+      todoStore.todos = updatedTodos;
     } catch (err) {
       console.error('Error updating todo status:', err);
       setError('Failed to update todo status. Please try again.');

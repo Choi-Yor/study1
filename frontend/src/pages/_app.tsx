@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
-import { createTheme, ThemeProvider, CssBaseline } from '@mui/material';
+import { createTheme, ThemeProvider, CssBaseline, Box } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import Navigation from '@/components/Navigation';
 import '@/styles/globals.css';
 
 // Create a theme instance
@@ -49,8 +50,8 @@ const theme = createTheme({
   },
 });
 
-export default function App({ Component, pageProps }: AppProps) {
-  // Remove the server-side injected CSS on client-side
+function App({ Component, pageProps }: AppProps) {
+  // Remove the server-side injected CSS when using Material-UI
   useEffect(() => {
     const jssStyles = document.querySelector('#jss-server-side');
     if (jssStyles?.parentElement) {
@@ -61,14 +62,20 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Todo App</title>
       </Head>
       <ThemeProvider theme={theme}>
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <CssBaseline />
-          <Component {...pageProps} />
+          <Navigation />
+          <Box sx={{ py: 2 }}>
+            <Component {...pageProps} />
+          </Box>
         </LocalizationProvider>
       </ThemeProvider>
     </>
   );
 }
+
+export default App;
