@@ -40,7 +40,6 @@ const TodoList: React.FC = () => {
 
   // Fetch todos from API
   const fetchTodos = async () => {
-    // 이미 데이터가 초기화되었고 저장된 데이터가 있으면 API 호출 생략
     if (todoStore.initialized && todoStore.todos.length > 0) {
       setTodos(todoStore.todos);
       setLoading(false);
@@ -51,7 +50,6 @@ const TodoList: React.FC = () => {
       setLoading(true);
       const data = await todoService.getAllTodos();
       setTodos(data);
-      // 전역 저장소에 데이터 저장
       todoStore.todos = data;
       todoStore.initialized = true;
       setError(null);
@@ -68,20 +66,13 @@ const TodoList: React.FC = () => {
   }, []);
 
   // Filter todos based on search term and selected tab
-  useEffect(() => {
-    // 방어적인 코드 추가 - todos가 배열인지 확인
-    if (!Array.isArray(todos)) {
-      setFilteredTodos([]);
-      return;
-    }
-    
+  useEffect(() => {    
     let filtered = [...todos];
     
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(
-        todo => 
-          todo.task.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(todo => 
+        todo.task.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -99,9 +90,8 @@ const TodoList: React.FC = () => {
   const handleAddTodo = async (todoData: TodoInput) => {
     try {
       const newTodo = await todoService.createTodo(todoData);
-      const updatedTodos = Array.isArray(todos) ? [...todos, newTodo] : [newTodo];
+      const updatedTodos = [...todos, newTodo];
       setTodos(updatedTodos);
-      // 전역 저장소 업데이트
       todoStore.todos = updatedTodos;
     } catch (err) {
       console.error('Error adding todo:', err);
@@ -115,12 +105,11 @@ const TodoList: React.FC = () => {
     
     try {
       const updatedTodo = await todoService.updateTodo(editTodo.id, todoData);
-      const updatedTodos = Array.isArray(todos) 
-        ? todos.map(todo => todo.id === editTodo.id ? updatedTodo : todo)
-        : [updatedTodo];
+      const updatedTodos = todos.map(todo => 
+        todo.id === editTodo.id ? updatedTodo : todo
+      );
       
       setTodos(updatedTodos);
-      // 전역 저장소 업데이트
       todoStore.todos = updatedTodos;
     } catch (err) {
       console.error('Error updating todo:', err);
@@ -132,12 +121,9 @@ const TodoList: React.FC = () => {
   const handleDeleteTodo = async (id: number) => {
     try {
       await todoService.deleteTodo(id);
-      const updatedTodos = Array.isArray(todos) 
-        ? todos.filter(todo => todo.id !== id)
-        : [];
+      const updatedTodos = todos.filter(todo => todo.id !== id);
       
       setTodos(updatedTodos);
-      // 전역 저장소 업데이트
       todoStore.todos = updatedTodos;
     } catch (err) {
       console.error('Error deleting todo:', err);

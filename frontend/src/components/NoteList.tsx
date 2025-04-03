@@ -37,7 +37,6 @@ const NoteList: React.FC = () => {
 
   // Fetch notes from API
   const fetchNotes = async () => {
-    // 이미 데이터가 초기화되었고 저장된 데이터가 있으면 API 호출 생략
     if (noteStore.initialized && noteStore.notes.length > 0) {
       setNotes(noteStore.notes);
       setLoading(false);
@@ -48,7 +47,6 @@ const NoteList: React.FC = () => {
       setLoading(true);
       const data = await noteService.getAllNotes();
       setNotes(data);
-      // 전역 저장소에 데이터 저장
       noteStore.notes = data;
       noteStore.initialized = true;
       setError(null);
@@ -66,18 +64,12 @@ const NoteList: React.FC = () => {
 
   // Filter notes based on search term
   useEffect(() => {
-    // 방어적인 코드 추가 - notes가 배열인지 확인
-    if (!Array.isArray(notes)) {
-      setFilteredNotes([]);
-      return;
-    }
-    
     let filtered = [...notes];
     
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(
-        note => note.content.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(note => 
+        note.content.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -93,9 +85,8 @@ const NoteList: React.FC = () => {
   const handleAddNote = async (noteData: NoteInput) => {
     try {
       const newNote = await noteService.createNote(noteData);
-      const updatedNotes = Array.isArray(notes) ? [...notes, newNote] : [newNote];
+      const updatedNotes = [...notes, newNote];
       setNotes(updatedNotes);
-      // 전역 저장소 업데이트
       noteStore.notes = updatedNotes;
     } catch (err) {
       console.error('Error adding note:', err);
@@ -109,12 +100,11 @@ const NoteList: React.FC = () => {
     
     try {
       const updatedNote = await noteService.updateNote(editNote.id, noteData);
-      const updatedNotes = Array.isArray(notes) 
-        ? notes.map(note => note.id === editNote.id ? updatedNote : note)
-        : [updatedNote];
+      const updatedNotes = notes.map(note => 
+        note.id === editNote.id ? updatedNote : note
+      );
       
       setNotes(updatedNotes);
-      // 전역 저장소 업데이트
       noteStore.notes = updatedNotes;
     } catch (err) {
       console.error('Error updating note:', err);
@@ -126,12 +116,9 @@ const NoteList: React.FC = () => {
   const handleDeleteNote = async (id: number) => {
     try {
       await noteService.deleteNote(id);
-      const updatedNotes = Array.isArray(notes) 
-        ? notes.filter(note => note.id !== id)
-        : [];
+      const updatedNotes = notes.filter(note => note.id !== id);
       
       setNotes(updatedNotes);
-      // 전역 저장소 업데이트
       noteStore.notes = updatedNotes;
     } catch (err) {
       console.error('Error deleting note:', err);
