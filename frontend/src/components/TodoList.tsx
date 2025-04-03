@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Container, 
   Typography, 
@@ -38,17 +38,45 @@ const TodoList: React.FC = () => {
     todoId: null
   });
 
-  // Fetch todos from API
-  const fetchTodos = async () => {
+  // 데이터 로딩 함수 - 간단한 접근법으로 개선
+  const fetchTodos = useCallback(async () => {
+    // 바로 캐시 데이터 사용
     if (todoStore.initialized && todoStore.todos.length > 0) {
+      console.log('Using cached todos:', todoStore.todos.length);
       setTodos(todoStore.todos);
+      // 항상 초기에 로딩 상태 해제
       setLoading(false);
       return;
     }
 
     try {
+      // 로딩 시작 - 지연 없이 바로 설정
       setLoading(true);
-      const data = await todoService.getAllTodos();
+      
+      console.log('Fetching todos from API...');
+      const response = await todoService.getAllTodos();
+      
+      // API 응답 처리
+      let data: Todo[] = [];
+      if (Array.isArray(response)) {
+        data = response;
+        console.log('API returned array with', data.length, 'todos');
+      } else {
+        console.error('API response is not an array:', response);
+        // DRF pagination 응답 형식 처리
+        const responseObj = response as any; // any로 타입 지정
+        if (responseObj && typeof responseObj === 'object' && 'results' in responseObj && Array.isArray(responseObj.results)) {
+          data = responseObj.results;
+          console.log('Extracted todos from results field:', data.length);
+        } else {
+          // 기본 빈 배열 사용
+          console.error('Unable to extract todos from API response');
+          data = [];
+        }
+      }
+      console.log('Processed todos data:', data.length);
+      
+      // 데이터 설정 및 저장
       setTodos(data);
       todoStore.todos = data;
       todoStore.initialized = true;
@@ -57,16 +85,31 @@ const TodoList: React.FC = () => {
       console.error('Error fetching todos:', err);
       setError('Failed to load todos. Please try again later.');
     } finally {
+      // 항상 로딩 상태 해제하도록 finally 블록 사용
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchTodos();
   }, []);
+  
+  // 컴포넌트 마운트 시 실행
+  useEffect(() => {
+    // 즉시 렌더링 시 로딩 상태 false로 초기화
+    setLoading(false);
+    
+    // 데이터 로드
+    fetchTodos();
+  }, [fetchTodos]);
+
+  // 위에서 이미 useEffect를 통합했으므로 이 useEffect는 제거
 
   // Filter todos based on search term and selected tab
   useEffect(() => {    
+    // 방어적 코드 추가: todos가 배열인지 확인
+    if (!Array.isArray(todos)) {
+      console.log('Todos is not an array:', todos);
+      setFilteredTodos([]);
+      return;
+    }
+    
     let filtered = [...todos];
     
     // Filter by search term
@@ -90,7 +133,11 @@ const TodoList: React.FC = () => {
   const handleAddTodo = async (todoData: TodoInput) => {
     try {
       const newTodo = await todoService.createTodo(todoData);
-      const updatedTodos = [...todos, newTodo];
+      
+      // 방어적 코드 추가
+      const currentTodos = Array.isArray(todos) ? todos : [];
+      const updatedTodos = [...currentTodos, newTodo];
+      
       setTodos(updatedTodos);
       todoStore.todos = updatedTodos;
     } catch (err) {
@@ -105,6 +152,14 @@ const TodoList: React.FC = () => {
     
     try {
       const updatedTodo = await todoService.updateTodo(editTodo.id, todoData);
+      
+      // 방어적 코드 추가
+      if (!Array.isArray(todos)) {
+        console.error('Todos is not an array in handleUpdateTodo');
+        setError('An error occurred. Please try again.');
+        return;
+      }
+      
       const updatedTodos = todos.map(todo => 
         todo.id === editTodo.id ? updatedTodo : todo
       );
@@ -121,6 +176,14 @@ const TodoList: React.FC = () => {
   const handleDeleteTodo = async (id: number) => {
     try {
       await todoService.deleteTodo(id);
+      
+      // 방어적 코드 추가
+      if (!Array.isArray(todos)) {
+        console.error('Todos is not an array in handleDeleteTodo');
+        setError('An error occurred. Please try again.');
+        return;
+      }
+      
       const updatedTodos = todos.filter(todo => todo.id !== id);
       
       setTodos(updatedTodos);
@@ -133,6 +196,13 @@ const TodoList: React.FC = () => {
 
   // Handle toggling a todo's completed status
   const handleToggleComplete = async (id: number, completed: boolean) => {
+    // 방어적 코드 추가 - 상위에서 배열 체크
+    if (!Array.isArray(todos)) {
+      console.error('Todos is not an array in handleToggleComplete');
+      setError('An error occurred. Please try again.');
+      return;
+    }
+    
     const todoToUpdate = todos.find(todo => todo.id === id);
     if (!todoToUpdate) return;
     
@@ -142,12 +212,12 @@ const TodoList: React.FC = () => {
         status: completed ? 'Completed' : 'Pending'
       });
       
-      const updatedTodos = Array.isArray(todos)
-        ? todos.map(todo => todo.id === id ? updatedTodo : todo)
-        : [updatedTodo];
+      // 이미 위에서 체크했으니 배열임을 보장할 수 있음
+      const updatedTodos = todos.map(todo => 
+        todo.id === id ? updatedTodo : todo
+      );
       
       setTodos(updatedTodos);
-      // 전역 저장소 업데이트
       todoStore.todos = updatedTodos;
     } catch (err) {
       console.error('Error updating todo status:', err);

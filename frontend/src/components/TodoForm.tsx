@@ -62,11 +62,22 @@ const TodoForm: React.FC<TodoFormProps> = ({
       return;
     }
 
+    // 날짜를 선택한 날짜 그대로 저장하기 위한 수정
+    // toISOString()은 UTC 기준으로 변환하므로 타임존 차이로 인해 날짜가 하루 전으로 변경될 수 있음
+    // 선택한 날짜 그대로 YYYY-MM-DD 형식으로 변환
+    let formattedDate = null;
+    if (dueDate) {
+      const year = dueDate.getFullYear();
+      const month = String(dueDate.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
+      const day = String(dueDate.getDate()).padStart(2, '0');
+      formattedDate = `${year}-${month}-${day}`;
+    }
+    
     const todoData: TodoInput = {
       task,
       priority,
       status,
-      due_date: dueDate ? dueDate.toISOString().split('T')[0] : null
+      due_date: formattedDate
     };
     
     onSubmit(todoData);

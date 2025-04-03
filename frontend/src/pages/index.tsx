@@ -6,8 +6,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Todo App</title>
-        <meta name="description" content="Todo application with Next.js and Django" />
+        <title>Todo & Notes App - Todos</title>
+        <meta name="description" content="Todo and Notes application with Next.js and Django" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <TodoList />

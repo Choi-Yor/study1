@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { 
   AppBar, 
   Toolbar, 
@@ -10,9 +10,9 @@ import {
 } from '@mui/material';
 import { 
   Note as NoteIcon, 
-  FormatListBulleted as TodoIcon 
+  FormatListBulleted as TodoIcon,
+  Event as EventIcon
 } from '@mui/icons-material';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 const Navigation: React.FC = () => {
@@ -29,35 +29,47 @@ const Navigation: React.FC = () => {
           </Typography>
           
           <Box sx={{ display: 'flex' }}>
-            <Link href="/" passHref legacyBehavior>
-              <Button 
-                color="inherit" 
-                startIcon={<TodoIcon />}
-                sx={{ 
-                  mx: 1,
-                  borderBottom: path === '/' ? `2px solid ${theme.palette.common.white}` : 'none',
-                  borderRadius: 0,
-                  paddingBottom: '6px'
-                }}
-              >
-                Todos
-              </Button>
-            </Link>
+            <Button 
+              color="inherit" 
+              startIcon={<EventIcon />}
+              onClick={() => router.push('/today')}
+              sx={{ 
+                mx: 1,
+                borderBottom: path === '/today' ? `2px solid ${theme.palette.common.white}` : 'none',
+                borderRadius: 0,
+                paddingBottom: '6px'
+              }}
+            >
+              Today
+            </Button>
             
-            <Link href="/notes" passHref legacyBehavior>
-              <Button 
-                color="inherit" 
-                startIcon={<NoteIcon />}
-                sx={{ 
-                  mx: 1,
-                  borderBottom: path === '/notes' ? `2px solid ${theme.palette.common.white}` : 'none',
-                  borderRadius: 0,
-                  paddingBottom: '6px'
-                }}
-              >
-                Notes
-              </Button>
-            </Link>
+            <Button 
+              color="inherit" 
+              startIcon={<TodoIcon />}
+              onClick={() => router.push('/')}
+              sx={{ 
+                mx: 1,
+                borderBottom: path === '/' ? `2px solid ${theme.palette.common.white}` : 'none',
+                borderRadius: 0,
+                paddingBottom: '6px'
+              }}
+            >
+              Todos
+            </Button>
+            
+            <Button 
+              color="inherit" 
+              startIcon={<NoteIcon />}
+              onClick={() => router.push('/notes')}
+              sx={{ 
+                mx: 1,
+                borderBottom: path === '/notes' ? `2px solid ${theme.palette.common.white}` : 'none',
+                borderRadius: 0,
+                paddingBottom: '6px'
+              }}
+            >
+              Notes
+            </Button>
           </Box>
         </Toolbar>
       </Container>

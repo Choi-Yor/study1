@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Container, 
   Typography, 
@@ -35,17 +35,26 @@ const NoteList: React.FC = () => {
     noteId: null
   });
 
-  // Fetch notes from API
-  const fetchNotes = async () => {
+  // 데이터 로딩 함수 - 간단한 접근법으로 개선
+  const fetchNotes = useCallback(async () => {
+    // 바로 캐시 데이터 사용
     if (noteStore.initialized && noteStore.notes.length > 0) {
+      console.log('Using cached notes:', noteStore.notes.length);
       setNotes(noteStore.notes);
+      // 항상 초기에 로딩 상태 해제
       setLoading(false);
       return;
     }
 
     try {
+      // 로딩 시작 - 지연 없이 바로 설정
       setLoading(true);
+      
+      console.log('Fetching notes from API...');
       const data = await noteService.getAllNotes();
+      console.log('Notes fetched:', data.length);
+      
+      // 데이터 설정 및 저장 - 모듈 수준 스토어 유지
       setNotes(data);
       noteStore.notes = data;
       noteStore.initialized = true;
@@ -54,16 +63,29 @@ const NoteList: React.FC = () => {
       console.error('Error fetching notes:', err);
       setError('Failed to load notes. Please try again later.');
     } finally {
+      // 항상 로딩 상태 해제하도록 finally 블록 사용
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchNotes();
   }, []);
+
+  // 컴포넌트 마운트 시 실행
+  useEffect(() => {
+    // 즉시 렌더링 시 로딩 상태 false로 초기화
+    setLoading(false);
+    
+    // 데이터 로드
+    fetchNotes();
+  }, [fetchNotes]);
 
   // Filter notes based on search term
   useEffect(() => {
+    // 방어적 코드 추가: notes가 배열인지 확인
+    if (!Array.isArray(notes)) {
+      console.log('Notes is not an array:', notes);
+      setFilteredNotes([]);
+      return;
+    }
+    
     let filtered = [...notes];
     
     // Filter by search term
@@ -85,7 +107,11 @@ const NoteList: React.FC = () => {
   const handleAddNote = async (noteData: NoteInput) => {
     try {
       const newNote = await noteService.createNote(noteData);
-      const updatedNotes = [...notes, newNote];
+      
+      // 방어적 코드 추가
+      const currentNotes = Array.isArray(notes) ? notes : [];
+      const updatedNotes = [...currentNotes, newNote];
+      
       setNotes(updatedNotes);
       noteStore.notes = updatedNotes;
     } catch (err) {
@@ -100,6 +126,14 @@ const NoteList: React.FC = () => {
     
     try {
       const updatedNote = await noteService.updateNote(editNote.id, noteData);
+      
+      // 방어적 코드 추가
+      if (!Array.isArray(notes)) {
+        console.error('Notes is not an array in handleUpdateNote');
+        setError('An error occurred. Please try again.');
+        return;
+      }
+      
       const updatedNotes = notes.map(note => 
         note.id === editNote.id ? updatedNote : note
       );
@@ -116,6 +150,14 @@ const NoteList: React.FC = () => {
   const handleDeleteNote = async (id: number) => {
     try {
       await noteService.deleteNote(id);
+      
+      // 방어적 코드 추가
+      if (!Array.isArray(notes)) {
+        console.error('Notes is not an array in handleDeleteNote');
+        setError('An error occurred. Please try again.');
+        return;
+      }
+      
       const updatedNotes = notes.filter(note => note.id !== id);
       
       setNotes(updatedNotes);
@@ -185,11 +227,7 @@ const NoteList: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
       
-      {loading ? (
-        <Box display="flex" justifyContent="center" my={4}>
-          <CircularProgress />
-        </Box>
-      ) : filteredNotes.length > 0 ? (
+      {filteredNotes.length > 0 ? (
         <Box>
           {filteredNotes.map(note => (
             <NoteItem

@@ -17,13 +17,15 @@ interface TodoItemProps {
   onEdit: (todo: Todo) => void;
   onDelete: (id: number) => void;
   onToggleComplete: (id: number, isCompleted: boolean) => void;
+  hideEditDelete?: boolean; // 수정/삭제 버튼 숨김 여부
 }
 
 const TodoItem: React.FC<TodoItemProps> = ({ 
   todo, 
   onEdit, 
   onDelete, 
-  onToggleComplete 
+  onToggleComplete,
+  hideEditDelete = false // 기본값은 false로 설정
 }) => {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No due date';
@@ -79,20 +81,24 @@ const TodoItem: React.FC<TodoItemProps> = ({
                 sx={{ mr: 1 }}
               />
             )}
-            <IconButton 
-              size="small" 
-              onClick={() => onEdit(todo)} 
-              color="primary"
-            >
-              <EditIcon />
-            </IconButton>
-            <IconButton 
-              size="small" 
-              onClick={() => onDelete(todo.id)} 
-              color="error"
-            >
-              <DeleteIcon />
-            </IconButton>
+            {!hideEditDelete && (
+              <>
+                <IconButton 
+                  size="small" 
+                  onClick={() => onEdit(todo)} 
+                  color="primary"
+                >
+                  <EditIcon />
+                </IconButton>
+                <IconButton 
+                  size="small" 
+                  onClick={() => onDelete(todo.id)} 
+                  color="error"
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </>
+            )}
           </Box>
         </Box>
       </CardContent>
