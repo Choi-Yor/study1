@@ -10,9 +10,18 @@ import {
   InputAdornment,
   Tabs,
   Tab,
-  Paper
+  Paper,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  IconButton,
+  Tooltip
 } from '@mui/material';
-import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
+import { Add as AddIcon, Search as SearchIcon, CalendarToday, Clear as ClearIcon } from '@mui/icons-material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import TodoItem from './TodoItem';
 import TodoForm from './TodoForm';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -45,6 +54,7 @@ const TodoList: React.FC = () => {
   const [editTodo, setEditTodo] = useState<Todo | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [tab, setTab] = useState(0);
+  const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; todoId: number | null }>({
     open: false,
     todoId: null
@@ -117,7 +127,7 @@ const TodoList: React.FC = () => {
 
   // 위에서 이미 useEffect를 통합했으므로 이 useEffect는 제거
 
-  // Filter todos based on search term and selected tab
+  // Filter todos based on search term, selected tab, and date filter
   useEffect(() => {    
     // 방어적 코드 추가: todos가 배열인지 확인
     if (!Array.isArray(todos)) {
@@ -142,8 +152,24 @@ const TodoList: React.FC = () => {
       filtered = filtered.filter(todo => todo.status === 'Completed');
     }
     
+    // Filter by date
+    if (dateFilter) {
+      filtered = filtered.filter(todo => {
+        if (!todo.due_date) return false;
+        
+        // 타임존 차이 문제 해결을 위한 날짜 문자열 처리
+        const todoDate = new Date(todo.due_date);
+        
+        // 날짜만 비교하기 위해 시간 정보 제거
+        const todoDateString = `${todoDate.getFullYear()}-${String(todoDate.getMonth() + 1).padStart(2, '0')}-${String(todoDate.getDate()).padStart(2, '0')}`;
+        const filterDateString = `${dateFilter.getFullYear()}-${String(dateFilter.getMonth() + 1).padStart(2, '0')}-${String(dateFilter.getDate()).padStart(2, '0')}`;
+        
+        return todoDateString === filterDateString;
+      });
+    }
+    
     setFilteredTodos(filtered);
-  }, [todos, searchTerm, tab]);
+  }, [todos, searchTerm, tab, dateFilter]);
 
   // Handle creating a new todo
   const handleAddTodo = async (todoData: TodoInput) => {
@@ -271,32 +297,63 @@ const TodoList: React.FC = () => {
           Todo List
         </Typography>
         
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-          <TextField
-            placeholder="Search todos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            fullWidth
-            size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setEditTodo(undefined);
-              setOpenForm(true);
-            }}
-          >
-            Add
-          </Button>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+          {/* 검색 및 추가 버튼 */}
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              placeholder="Search todos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              fullWidth
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setEditTodo(undefined);
+                setOpenForm(true);
+              }}
+            >
+              Add
+            </Button>
+          </Box>
+          
+          {/* 날짜 필터 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="Filter by date"
+                value={dateFilter}
+                onChange={(newDate) => setDateFilter(newDate)}
+                slotProps={{
+                  textField: { 
+                    size: 'small',
+                    fullWidth: true
+                  }
+                }}
+              />
+            </LocalizationProvider>
+            {dateFilter && (
+              <Tooltip title="Clear date filter">
+                <IconButton
+                  onClick={() => setDateFilter(null)}
+                  color="default"
+                  size="small"
+                >
+                  <ClearIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </Box>
         
         <Paper sx={{ mb: 3 }}>
