@@ -147,7 +147,15 @@ const NoteList: React.FC = () => {
   // Handle creating a new note
   const handleAddNote = async (noteData: NoteInput) => {
     try {
+      console.log('Sending note data to API:', noteData); // 보내는 데이터 로깅
       const newNote = await noteService.createNote(noteData);
+      console.log('Received note from API:', newNote); // 받은 응답 로깅
+      
+      // 제목이 누락된 경우 방어적 코드 추가
+      if (!newNote.title && noteData.title) {
+        console.warn('Title missing in API response. Adding title from input data.');
+        newNote.title = noteData.title;
+      }
       
       // 방어적 코드 추가
       const currentNotes = Array.isArray(notes) ? notes : [];
@@ -168,7 +176,15 @@ const NoteList: React.FC = () => {
     if (!editNote) return;
     
     try {
+      console.log('Sending update data to API:', noteData); // 보내는 데이터 로깅
       const updatedNote = await noteService.updateNote(editNote.id, noteData);
+      console.log('Received updated note from API:', updatedNote); // 응답 로깅
+      
+      // 제목이 누락된 경우 방어적 코드 추가
+      if (!updatedNote.title && noteData.title) {
+        console.warn('Title missing in API response. Adding title from input data.');
+        updatedNote.title = noteData.title;
+      }
       
       // 방어적 코드 추가
       if (!Array.isArray(notes)) {

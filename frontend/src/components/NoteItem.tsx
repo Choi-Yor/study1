@@ -73,11 +73,28 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, onEdit, onDelete }) => {
       </Box>
 
       <Typography 
-        variant="body1" 
+        variant="h6" 
+        component="div" 
+        sx={{ 
+          fontWeight: 'bold',
+          mb: 1
+        }}
+      >
+        {note.title || 'Untitled Note'}
+      </Typography>
+      
+      <Typography 
+        variant="body2" 
+        color="text.secondary"
         component="div" 
         sx={{ 
           whiteSpace: 'pre-wrap',
-          mb: 2
+          mb: 2,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical'
         }}
       >
         {note.content}

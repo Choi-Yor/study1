@@ -33,6 +33,7 @@ class TodoItem(BaseModel):
 # NoteItem 모델
 class NoteItem(BaseModel):
     id: Optional[int] = None
+    title: str
     content: str
     created_at: Optional[str] = None
 
@@ -136,9 +137,9 @@ def get_notes():
 @app.post("/api/notes/")
 def create_note(note: NoteItem):
     try:
-        print(f"Creating note with content: {note.content}")
+        print(f"Creating note with title: {note.title}, content: {note.content}")
         # 저장 로직
-        db.add_note(note.content)
+        db.add_note(note.title, note.content)
         
         # 저장 후 최신 데이터 가져오기
         notes_df = db.get_notes()
@@ -171,13 +172,13 @@ def get_note(note_id: int):
 @app.put("/api/notes/{note_id}")
 def update_note(note_id: int, note: NoteItem):
     try:
-        print(f"Updating note {note_id} with content: {note.content}")
+        print(f"Updating note {note_id} with title: {note.title}, content: {note.content}")
         notes_df = db.get_notes()
         if notes_df.empty or notes_df[notes_df['id'] == note_id].empty:
             raise HTTPException(status_code=404, detail=f"Note with id {note_id} not found")
         
-        # 내용 업데이트
-        db.update_note(note_id, note.content)
+        # 제목과 내용 업데이트
+        db.update_note(note_id, note.title, note.content)
         
         # 최신 데이터 반환
         updated_df = db.get_notes()

@@ -22,14 +22,17 @@ const NoteForm: React.FC<NoteFormProps> = ({
   onSubmit,
   initialData
 }) => {
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [errors, setErrors] = useState({ content: false });
+  const [errors, setErrors] = useState({ title: false, content: false });
 
   useEffect(() => {
     if (initialData) {
+      setTitle(initialData.title);
       setContent(initialData.content);
     } else {
       // Reset form for new note
+      setTitle('');
       setContent('');
     }
   }, [initialData, open]);
@@ -38,12 +41,26 @@ const NoteForm: React.FC<NoteFormProps> = ({
     e.preventDefault();
     
     // Validate
+    const newErrors = { title: false, content: false };
+    let hasError = false;
+    
+    if (!title.trim()) {
+      newErrors.title = true;
+      hasError = true;
+    }
+    
     if (!content.trim()) {
-      setErrors({ content: true });
+      newErrors.content = true;
+      hasError = true;
+    }
+    
+    if (hasError) {
+      setErrors(newErrors);
       return;
     }
 
     const noteData: NoteInput = {
+      title,
       content
     };
     
@@ -57,19 +74,33 @@ const NoteForm: React.FC<NoteFormProps> = ({
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <TextField
+            label="Title"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (e.target.value.trim()) setErrors({ ...errors, title: false });
+            }}
+            fullWidth
+            required
+            error={errors.title}
+            helperText={errors.title ? 'Title is required' : ''}
+            autoFocus
+            margin="dense"
+            sx={{ mb: 2 }}
+          />
+          <TextField
             label="Content"
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
-              if (e.target.value.trim()) setErrors({ content: false });
+              if (e.target.value.trim()) setErrors({ ...errors, content: false });
             }}
             fullWidth
             required
             multiline
-            rows={6}
+            rows={4}
             error={errors.content}
             helperText={errors.content ? 'Content is required' : ''}
-            autoFocus
             margin="dense"
           />
         </DialogContent>

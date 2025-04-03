@@ -26,6 +26,7 @@ class Note(Base):
     __tablename__ = 'notes'
     
     id = Column(Integer, primary_key=True)
+    title = Column(String(255), nullable=False, default='Untitled Note')
     content = Column(Text, nullable=False)
     created_at = Column(DateTime)
 
@@ -94,9 +95,10 @@ class TodoDB:
             session.commit()
         session.close()
 
-    def add_note(self, content):
+    def add_note(self, title, content):
         session = self.Session()
         new_note = Note(
+            title=title,
             content=content, 
             created_at=datetime.now()
         )
@@ -109,7 +111,8 @@ class TodoDB:
         notes = session.query(Note).all()
         df = pd.DataFrame([
             {
-                'id': note.id, 
+                'id': note.id,
+                'title': note.title, 
                 'content': note.content, 
                 'created_at': note.created_at
             } for note in notes
@@ -117,10 +120,11 @@ class TodoDB:
         session.close()
         return df
 
-    def update_note(self, note_id, new_content):
+    def update_note(self, note_id, new_title, new_content):
         session = self.Session()
         note = session.query(Note).filter(Note.id == note_id).first()
         if note:
+            note.title = new_title
             note.content = new_content
             session.commit()
         session.close()
