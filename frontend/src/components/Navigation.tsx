@@ -26,6 +26,17 @@ const resetTodoStore = () => {
   }
 };
 
+// 노트 스토어 초기화 함수
+const resetNoteStore = () => {
+  if (typeof window !== 'undefined') {
+    // window 객체에 noteStore 상태 초기화
+    if ((window as any).noteStore) {
+      (window as any).noteStore.initialized = false;
+      console.log('NoteStore reset for fresh data fetch');
+    }
+  }
+};
+
 const Navigation: React.FC = () => {
   const theme = useTheme();
   const router = useRouter();
@@ -75,7 +86,11 @@ const Navigation: React.FC = () => {
             <Button 
               color="inherit" 
               startIcon={<NoteIcon />}
-              onClick={() => router.push('/notes')}
+              onClick={() => {
+                // Notes 페이지로 이동 전 데이터 강제 새로고침
+                resetNoteStore();
+                router.push('/notes');
+              }}
               sx={{ 
                 mx: 1,
                 borderBottom: path === '/notes' ? `2px solid ${theme.palette.common.white}` : 'none',

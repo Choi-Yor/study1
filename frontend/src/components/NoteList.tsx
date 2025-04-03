@@ -15,12 +15,7 @@ import NoteItem from './NoteItem';
 import NoteForm from './NoteForm';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import noteService, { Note, NoteInput } from '@/services/noteService';
-
-// 전역 변수로 데이터 저장소 생성
-const noteStore = {
-  notes: [] as Note[],
-  initialized: false
-};
+import * as noteStore from '@/services/noteStore';
 
 const NoteList: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -35,47 +30,93 @@ const NoteList: React.FC = () => {
     noteId: null
   });
 
-  // 데이터 로딩 함수 - 간단한 접근법으로 개선
+  // 데이터 로딩 함수 - 개선된 noteStore 모듈 사용
   const fetchNotes = useCallback(async () => {
-    // 바로 캐시 데이터 사용
-    if (noteStore.initialized && noteStore.notes.length > 0) {
-      console.log('Using cached notes:', noteStore.notes.length);
-      setNotes(noteStore.notes);
-      // 항상 초기에 로딩 상태 해제
+    console.log('NoteList fetchNotes called - using improved noteStore');
+    
+    // 1. 먼저 저장된 데이터가 있는지 확인
+    if (noteStore.isInitialized() && noteStore.getNotes().length > 0) {
+      console.log('Using notes from global store:', noteStore.getNotes().length);
+      setNotes(noteStore.getNotes());
       setLoading(false);
-      return;
     }
-
+    
+    // 2. 어케든 API에서 데이터 가져오기 시도
     try {
-      // 로딩 시작 - 지연 없이 바로 설정
       setLoading(true);
-      
       console.log('Fetching notes from API...');
       const data = await noteService.getAllNotes();
-      console.log('Notes fetched:', data.length);
+      console.log('Notes fetched from API:', data.length);
       
-      // 데이터 설정 및 저장 - 모듈 수준 스토어 유지
-      setNotes(data);
-      noteStore.notes = data;
-      noteStore.initialized = true;
-      setError(null);
+      // 데이터 설정 및 저장 - 가져온 데이터가 있을 때만 업데이트
+      if (Array.isArray(data) && data.length > 0) {
+        // 현재 상태 참조 대신 함수형 업데이트 사용
+        setNotes(prevNotes => {
+          // 현재 화면에 표시된 노트가 없을 때만 API 데이터로 업데이트
+          const currentNotes = Array.isArray(prevNotes) ? prevNotes : [];
+          if (currentNotes.length === 0) {
+            console.log('No notes displayed, updating UI with API data');
+            // 전역 스토어 업데이트
+            noteStore.setNotes(data);
+            return data;
+          } else {
+            console.log('Notes already displayed, keeping current data');
+            // 전역 스토어는 항상 최신 데이터로 업데이트
+            noteStore.setNotes(data);
+            return currentNotes;
+          }
+        });
+        
+        setError(null);
+      } else {
+        // API에서 가져온 데이터가 없는 경우 빈 배열로 설정 (함수형 업데이트)
+        setNotes(prevNotes => {
+          if (!Array.isArray(prevNotes) || prevNotes.length === 0) {
+            console.log('No notes available from API');
+            return [];
+          }
+          return prevNotes;
+        });
+      }
     } catch (err) {
-      console.error('Error fetching notes:', err);
-      setError('Failed to load notes. Please try again later.');
+      console.error('Error fetching notes from API:', err);
+      
+      // API 오류 발생 시에도 전역 스토어에 저장된 노트 활용
+      const storedNotes = noteStore.getNotes();
+      if (Array.isArray(storedNotes) && storedNotes.length > 0) {
+        console.log('Using notes from global store after API error:', storedNotes.length);
+        setNotes(storedNotes);
+        setError(null);
+      } else {
+        setError('Failed to load notes. Please try again later.');
+      }
     } finally {
       // 항상 로딩 상태 해제하도록 finally 블록 사용
       setLoading(false);
     }
-  }, []);
+  }, []); // 의존성 배열에서 notes 제거하여 무한 루프 방지
+
 
   // 컴포넌트 마운트 시 실행
   useEffect(() => {
-    // 즉시 렌더링 시 로딩 상태 false로 초기화
-    setLoading(false);
+    console.log('NoteList component mounted, loading notes...');
+    // 로딩 상태 표시
+    setLoading(true);
     
-    // 데이터 로드
+    // 데이터 로드 - 여기서 한 번만 호출
     fetchNotes();
-  }, [fetchNotes]);
+    
+    // 컴포넌트 언마운트 시 cleanup
+    return () => {
+      console.log('NoteList component unmounting');
+      
+      // 언마운트 전 현재 노트 데이터 저장 확인
+      if (Array.isArray(notes) && notes.length > 0) {
+        console.log('Saving notes before unmount:', notes.length);
+        noteStore.setNotes(notes);
+      }
+    };
+  }, [fetchNotes]); // notes 의존성 제거, fetchNotes만 유지
 
   // Filter notes based on search term
   useEffect(() => {
@@ -113,7 +154,9 @@ const NoteList: React.FC = () => {
       const updatedNotes = [...currentNotes, newNote];
       
       setNotes(updatedNotes);
-      noteStore.notes = updatedNotes;
+      // 전역 노트 스토어 업데이트
+      noteStore.setNotes(updatedNotes);
+      console.log('Updated global noteStore, length:', updatedNotes.length);
     } catch (err) {
       console.error('Error adding note:', err);
       setError('Failed to add note. Please try again.');
@@ -139,7 +182,9 @@ const NoteList: React.FC = () => {
       );
       
       setNotes(updatedNotes);
-      noteStore.notes = updatedNotes;
+      // 전역 노트 스토어 업데이트
+      noteStore.setNotes(updatedNotes);
+      console.log('Updated global noteStore, length:', updatedNotes.length);
     } catch (err) {
       console.error('Error updating note:', err);
       setError('Failed to update note. Please try again.');
@@ -161,7 +206,9 @@ const NoteList: React.FC = () => {
       const updatedNotes = notes.filter(note => note.id !== id);
       
       setNotes(updatedNotes);
-      noteStore.notes = updatedNotes;
+      // 전역 노트 스토어 업데이트
+      noteStore.setNotes(updatedNotes);
+      console.log('Updated global noteStore, length:', updatedNotes.length);
     } catch (err) {
       console.error('Error deleting note:', err);
       setError('Failed to delete note. Please try again.');
