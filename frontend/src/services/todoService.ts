@@ -1,6 +1,10 @@
 import axios from 'axios';
 
+// 로컬 개발 환경에서는 로컬 API 서버 사용
 const API_URL = 'http://localhost:8000/api';
+
+// 프로덕션 환경에서는 아래 URL을 사용 (서버 배포 시 주석 해제)
+// const API_URL = 'https://your-api-server-url.com/api';
 
 export interface Todo {
   id: number;

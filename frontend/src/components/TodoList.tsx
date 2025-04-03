@@ -18,10 +18,22 @@ import TodoForm from './TodoForm';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import todoService, { Todo, TodoInput } from '@/services/todoService';
 
-// 전역 변수로 데이터 저장소 생성
-const todoStore = {
-  todos: [] as Todo[],
-  initialized: false
+// TodoList에서도 TodayList와 동일한 전역 스토어 사용하도록 수정
+interface TodoStore {
+  todos: Todo[];
+  initialized: boolean;
+}
+
+// 전역 스토어 접근 함수 (TodayList와 동일한 방식)
+const getTodoStore = (): TodoStore => {
+  // window 객체에 todoStore가 없다면 생성
+  if (typeof window !== 'undefined' && !(window as any).todoStore) {
+    (window as any).todoStore = {
+      todos: [],
+      initialized: false
+    };
+  }
+  return typeof window !== 'undefined' ? (window as any).todoStore : { todos: [], initialized: false };
 };
 
 const TodoList: React.FC = () => {
@@ -38,12 +50,15 @@ const TodoList: React.FC = () => {
     todoId: null
   });
 
-  // 데이터 로딩 함수 - 간단한 접근법으로 개선
+  // 데이터 로딩 함수 - window.todoStore 사용하도록 개선
   const fetchTodos = useCallback(async () => {
-    // 바로 캐시 데이터 사용
-    if (todoStore.initialized && todoStore.todos.length > 0) {
-      console.log('Using cached todos:', todoStore.todos.length);
-      setTodos(todoStore.todos);
+    // 전역 스토어 참조
+    const store = getTodoStore();
+    
+    // 캐시된 데이터 사용
+    if (store.initialized && Array.isArray(store.todos) && store.todos.length > 0) {
+      console.log('Using cached todos from global store:', store.todos.length);
+      setTodos(store.todos);
       // 항상 초기에 로딩 상태 해제
       setLoading(false);
       return;
@@ -76,10 +91,11 @@ const TodoList: React.FC = () => {
       }
       console.log('Processed todos data:', data.length);
       
-      // 데이터 설정 및 저장
+      // 데이터 설정 및 저장 (window.todoStore 사용)
       setTodos(data);
-      todoStore.todos = data;
-      todoStore.initialized = true;
+      const store = getTodoStore();
+      store.todos = data;
+      store.initialized = true;
       setError(null);
     } catch (err) {
       console.error('Error fetching todos:', err);
@@ -139,7 +155,9 @@ const TodoList: React.FC = () => {
       const updatedTodos = [...currentTodos, newTodo];
       
       setTodos(updatedTodos);
-      todoStore.todos = updatedTodos;
+      // 전역 스토어 업데이트
+      const store = getTodoStore();
+      store.todos = updatedTodos;
     } catch (err) {
       console.error('Error adding todo:', err);
       setError('Failed to add todo. Please try again.');
@@ -165,7 +183,9 @@ const TodoList: React.FC = () => {
       );
       
       setTodos(updatedTodos);
-      todoStore.todos = updatedTodos;
+      // 전역 스토어 업데이트
+      const store = getTodoStore();
+      store.todos = updatedTodos;
     } catch (err) {
       console.error('Error updating todo:', err);
       setError('Failed to update todo. Please try again.');
@@ -187,7 +207,9 @@ const TodoList: React.FC = () => {
       const updatedTodos = todos.filter(todo => todo.id !== id);
       
       setTodos(updatedTodos);
-      todoStore.todos = updatedTodos;
+      // 전역 스토어 업데이트
+      const store = getTodoStore();
+      store.todos = updatedTodos;
     } catch (err) {
       console.error('Error deleting todo:', err);
       setError('Failed to delete todo. Please try again.');
@@ -218,7 +240,9 @@ const TodoList: React.FC = () => {
       );
       
       setTodos(updatedTodos);
-      todoStore.todos = updatedTodos;
+      // 전역 스토어 업데이트
+      const store = getTodoStore();
+      store.todos = updatedTodos;
     } catch (err) {
       console.error('Error updating todo status:', err);
       setError('Failed to update todo status. Please try again.');

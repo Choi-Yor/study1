@@ -15,6 +15,17 @@ import {
 } from '@mui/icons-material';
 import { useRouter } from 'next/router';
 
+// 전역 스토어 초기화 함수
+const resetTodoStore = () => {
+  if (typeof window !== 'undefined') {
+    // window 객체에 todoStore 상태 초기화
+    if ((window as any).todoStore) {
+      (window as any).todoStore.initialized = false;
+      console.log('TodoStore reset for fresh data fetch');
+    }
+  }
+};
+
 const Navigation: React.FC = () => {
   const theme = useTheme();
   const router = useRouter();
@@ -32,7 +43,11 @@ const Navigation: React.FC = () => {
             <Button 
               color="inherit" 
               startIcon={<EventIcon />}
-              onClick={() => router.push('/today')}
+              onClick={() => {
+                // Today 페이지로 이동 전 데이터 강제 새로고침
+                resetTodoStore();
+                router.push('/today');
+              }}
               sx={{ 
                 mx: 1,
                 borderBottom: path === '/today' ? `2px solid ${theme.palette.common.white}` : 'none',

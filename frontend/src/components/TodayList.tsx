@@ -48,6 +48,7 @@ const TodayList: React.FC = () => {
   }, []);
 
   // 오늘 날짜와 할 일 데이터 로딩 함수
+  // 문제를 해결하기 위해 의존성 배열에 router.pathname 추가
   useEffect(() => {
     async function loadTodosForToday() {
       try {
@@ -63,10 +64,10 @@ const TodayList: React.FC = () => {
         let todosData: Todo[] = [];
         const store = getTodoStore();
         
-        if (store.initialized && Array.isArray(store.todos) && store.todos.length > 0) {
-          console.log('Using cached todos from global store:', store.todos.length);
-          todosData = store.todos;
-        } else {
+        // Today 페이지에서는 항상 서버에서 최신 데이터 가져오기
+        console.log('Today page: Always fetching fresh todos from API');
+        store.initialized = false; // 강제로 초기화 상태로 설정
+        {
           console.log('Fetching todos from API...');
           try {
             const response = await todoService.getAllTodos();
@@ -169,13 +170,39 @@ const TodayList: React.FC = () => {
       );
       setTodayTodos(updatedTodayTodos);
       
-      // 전역 스토어도 업데이트
+      // 전역 스토어 업데이트 - 항상 업데이트하도록 수정
       const store = getTodoStore();
-      if (store.initialized && store.todos.length > 0) {
+      // 전역 스토어가 초기화되지 않았다면 초기화
+      if (!store.initialized || !Array.isArray(store.todos)) {
+        store.todos = []; 
+        store.initialized = true;
+      }
+      
+      // 전역 스토어에서 해당 Todo 찾기
+      const existsInStore = store.todos.some((todo: Todo) => todo.id === id);
+      
+      if (existsInStore) {
+        // 존재하면 업데이트
         store.todos = store.todos.map((todo: Todo) =>
           todo.id === id ? updatedTodo : todo
         );
+      } else {
+        // 존재하지 않으면 API에서 모든 할 일 다시 가져오기
+        console.log('Todo not found in global store, refreshing all todos');
+        todoService.getAllTodos().then(response => {
+          if (Array.isArray(response)) {
+            store.todos = response;
+          } else if (response && typeof response === 'object' && 'results' in response) {
+            // response 타입 명시적 지정
+            const paginatedResponse = response as { results: Todo[] };
+            store.todos = paginatedResponse.results;
+          }
+          store.initialized = true;
+        }).catch(error => {
+          console.error('Failed to refresh todos:', error);
+        });
       }
+      console.log('Updated global todoStore with completed status change');
     } catch (err) {
       console.error('Error updating todo status:', err);
       setError('Failed to update todo status. Please try again.');
