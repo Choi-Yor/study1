@@ -55,6 +55,9 @@ const TodoList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [tab, setTab] = useState(0);
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  // 정렬 기능을 마감일 늦은순으로 고정하고 UI 숲김
+  const sortOrder = 'due-latest' as const;
+
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; todoId: number | null }>({
     open: false,
     todoId: null
@@ -167,6 +170,35 @@ const TodoList: React.FC = () => {
         return todoDateString === filterDateString;
       });
     }
+    
+    // 정렬 로직 적용
+    filtered.sort((a, b) => {
+      // 마감일(due date) 기준 정렬
+      if (sortOrder === 'due-latest' || sortOrder === 'due-oldest') {
+        // null 마감일 처리 - null은 정렬에서 가장 뒤로 나오도록 처리
+        if (!a.due_date && !b.due_date) {
+          // 두 항목 모두 null이면 한글/알파벳 순 정렬
+          return a.task.localeCompare(b.task, 'ko');
+        } else if (!a.due_date) {
+          return 1; // a의 마감일이 null이면 b가 앞으로
+        } else if (!b.due_date) {
+          return -1; // b의 마감일이 null이면 a가 앞으로
+        }
+        
+        const dateA = new Date(a.due_date).getTime();
+        const dateB = new Date(b.due_date).getTime();
+        
+        // 마감일이 다르면 마감일 기준으로 정렬
+        if (dateA !== dateB) {
+          // due-latest: 마감일이 늦은 항목이 상단에 표시
+          // due-oldest: 마감일이 빨른 항목이 상단에 표시
+          return sortOrder === 'due-latest' ? dateB - dateA : dateA - dateB;
+        }
+      }
+      
+      // 마감일이 같거나 이름순 정렬인 경우 한글/알파벳 순 정렬
+      return a.task.localeCompare(b.task, 'ko');
+    });
     
     setFilteredTodos(filtered);
   }, [todos, searchTerm, tab, dateFilter]);
@@ -326,6 +358,8 @@ const TodoList: React.FC = () => {
               Add
             </Button>
           </Box>
+          
+          {/* 정렬 옵션 UI 숲김 처리 */}
           
           {/* 날짜 필터 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
